@@ -22,12 +22,11 @@ df.columns = ['NIF', 'Name', 'CNAE', 'Total Assets - 2017', 'Total Assets - 2016
 def index():
     return render_template("index.html", df = df, ids = list(range(len(df))))
 
-
 from joblib import load
 model = load('Rating_RandomForestClassifier.joblib')
 
-@app.route("/probdefault")
-def probdefault():
+@app.route("/probdefaultfixed")
+def probdefaultfixed():
     """ Probability of Default Harded Coded """
     # dictionary with list object in values
     data = {
@@ -46,9 +45,10 @@ def probdefault():
 
     return "Probability of default: {}".format(prob_default)
 
-@app.route("/probdefaultform")
-def probdefaultorm():
 
+@app.route("/probdefault")
+def probdefault():
+    """ Probability of Default Harded Coded """
     # dictionary with list object in values
     data = {
         'ebitda_income' : [request.args["ebitda_income"]],
@@ -58,37 +58,32 @@ def probdefaultorm():
     }
 
     # creating a Dataframe object
-    data_df = pd.DataFrame(data).fillna(0)
+    data_df = pd.DataFrame(data)
     X = data_df[['ebitda_income','debt_ebitda','rraa_rrpp','log_operating_income']]
 
     # predict
-    probability_default = model.predict_proba(X)[:,1]
+    prob_default = model.predict_proba(X)[:,1]
 
-    return render_template("index.html", probability_default = probability_default, df = df, ids = list(range(len(df))),)
+    return "Probability of default: {}".format(prob_default)
+
 
 @app.route("/cs")
 def cs():
     """ Company Searcher """
     data=df[df['NIF']==request.args['nif']].head(1)
     if 'model' in request.args:
-        # df['ebitda_income'] = (df.p49100_Profit_h1+df.p40800_Amortization_h1)/(df.p40100_40500_SalesTurnover_h1)        data['ebitda_income']=(data['Profit - 2017']+data['Amortization - 2017'])/data['Income - 2017']
-        # df['debt_ebitda'] =(df.p31200_ShortTermDebt_h1 + df.p32300_LongTermDebt_h1) /(df.p49100_Profit_h1+df.p40800_Amortization_h1)
+        data['ebitda_income']=(data['Profit - 2017']+data['Amortization - 2017'])/data['Income - 2017']
         data['debt_ebitda']=(data['Short Debt - 2017']+data['Long Debt - 2017'])/(data['Profit - 2017']+data['Amortization - 2017'])
-        # df['rraa_rrpp'] = (df.p10000_TotalAssets_h1 - df.p20000_OwnCapital_h1) /df.p20000_OwnCapital_h1
         data['rraa_rrpp']=(data['Total Assets - 2017']-data['Own Resources - 2017'])/data['Own Resources - 2017']
-        # df['log_operating_income'] = np.log(df.p40100_40500_SalesTurnover_h1)
         data['log_operating_income']=np.log(data['Income - 2017'])
         data=data.replace([np.inf, -np.inf], np.nan).fillna(0)
         X = data[['ebitda_income','debt_ebitda','rraa_rrpp','log_operating_income']]
         data['probabilidad_default']=model.predict_proba(X)[:,1]
-        #probabilidad_default = model.predict_proba(X)[:,1]
-
-
     if 'JSON' in request.args:
         return data.to_json(orient='records')
-
     else:
         return render_template("index.html", df = df, ids = list(range(len(df))), result = 1, data = data.T.to_html())
 
-if __name__ == '__main__': # This only runs if 
+
+if __name__ == '__main__': # This only runs if
   app.run()
