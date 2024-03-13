@@ -6,9 +6,18 @@ import numpy as np
 
 app = Flask(__name__)
 
-
-import sqlite3
-conn = sqlite3.connect('./database/company_balancesheet_database.db')
+if False: # Put it True if MySQL in pythonanywhere
+    # Create a connection to the MySQL database
+    import mysql.connector
+    conn = mysql.connector.connect(
+        host='your_hostname',
+        user='your_username',
+        password='your_password',  # replace with your password
+        database='your_data$base'
+    )
+else:
+    import sqlite3
+    conn = sqlite3.connect('./database/company_balancesheet_database.db')
 
 pd.set_option('display.float_format', lambda x: '%.3f' % x)
 df = pd.read_sql("""SELECT * FROM cuentas_anuales;""", conn)
