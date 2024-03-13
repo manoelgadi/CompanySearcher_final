@@ -15,12 +15,14 @@ if False: # Put it True if MySQL in pythonanywhere
         password='your_password',  # replace with your password
         database='your_data$base'
     )
+    pd.set_option('display.float_format', lambda x: '%.3f' % x)
+    df = pd.read_sql("""SELECT * FROM balance_sheet;""", conn)
 else:
     import sqlite3
     conn = sqlite3.connect('./database/company_balancesheet_database.db')
+    pd.set_option('display.float_format', lambda x: '%.3f' % x)
+    df = pd.read_sql("""SELECT * FROM cuentas_anuales;""", conn)
 
-pd.set_option('display.float_format', lambda x: '%.3f' % x)
-df = pd.read_sql("""SELECT * FROM cuentas_anuales;""", conn)
 
 df.drop('id',inplace=True,axis=1)
 
